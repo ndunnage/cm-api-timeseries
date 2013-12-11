@@ -18,6 +18,7 @@
 # Originally adapted from timeseries.py as part of the cm_api module
 #
 #     https://github.com/cloudera/cm_api/blob/cm-4.6/python/examples/timeseries.py
+# Added outfile option which enables the output filename to be parsed in as a variable
 
 """
 Provide the aggregated timeseries for a given query in CSV format
@@ -33,13 +34,14 @@ Options:
 --version=<cm-server-api-version>  Define the Cloudera Manager Server API version
                                    Defaults to latest as defined in the cm_api python module
 --user=<cm-server-user>            The Cloudera Manager user
-                                   Defaults to 'admin'
+                                   Defaults to 'cloudera'
 --user=<cm-server-user-password>   The Cloudera Manager user password
-                                   Defaults to 'admin'
+                                   Defaults to 'cloudera'
 --from_time=<from_time>            From time for the query, in the "YYYY-mm-ddTHH:MM" format
                                    Defaults to 30 minutes before 'to_time'
 --to_time=<to_time>                To time for the query, in the "YYYY-mm-ddTHH:MM" format
                                    Defaults to current time if not specified
+--outfile=<outfile>                Optional select an output csv file
                                    
 """
 
@@ -51,11 +53,16 @@ import inspect
 import logging
 import sys
 import textwrap
+import csv
 
 LOG = logging.getLogger(__name__)
 
 CM_API_MAXIMUM_TIME_WINDOW_DAY = 28
 DEFAULT_FROM_TIME_WINDOW_MIN = 30
+
+
+
+
 
 class TimeSeriesQuery(object):
     """
@@ -73,9 +80,23 @@ def do_print(query, query_responses):
                 print "ENTITY,TIMESTAMP," + metric.upper()
             for datas in query_responses[entity][metric]:
                 for data in datas:
-                    print entity + "," + str(data.timestamp) + "," + str(data.value)
+                    print entity + "," + str(data.timestamp) + str(data.value) 
 
-def do_query(host, port, version, user, password, from_time, to_time, query):
+def do_csv(outfile, query, query_responses):
+    ofile = open(outfile, "wb")
+    writer = csv.writer(ofile, delimiter=' ' , quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    print "TIMESERIES," + query.upper()
+    for entity in query_responses:
+        for metric in query_responses[entity]:
+            if query_responses[entity][metric]:
+                print ""
+                print "ENTITY,TIMESTAMP," + metric.upper()
+            for datas in query_responses[entity][metric]:
+                for data in datas:
+                    print entity + "," + str(data.timestamp).replace(" ", "T") + "," + str(data.value)
+                    writer.writerow(entity + "," + str(data.timestamp).replace(" ", "T") + "," + str(data.value)) 
+
+def do_query(host, port, version, user, password, outfile, from_time, to_time, query):
     tsquery = TimeSeriesQuery()
     time_tranches = []
     while (to_time - from_time).days > CM_API_MAXIMUM_TIME_WINDOW_DAY:
@@ -96,7 +117,10 @@ def do_query(host, port, version, user, password, from_time, to_time, query):
                         query_responses[metadata.entityName] = query_responses.get(metadata.entityName, {})
                         query_responses[metadata.entityName][metadata.metricName] = query_responses[metadata.entityName].get(metadata.metricName, [])
                         query_responses[metadata.entityName].get(metadata.metricName).append(timeseries.data)
-    do_print(query, query_responses)    
+    if outfile is None:
+        do_print(query, query_responses)
+    else:
+        do_csv(outfile, query, query_responses)
 
 def usage():
     doc = inspect.getmodule(usage).__doc__
@@ -110,15 +134,16 @@ def main(argv):
     setup_logging(logging.INFO)
 
     host = 'localhost'
-    port = 7180
+    port = '7180'
     version = api_client.API_CURRENT_VERSION
-    user = 'admin'
-    password = 'admin'    
+    user = 'cloudera'
+    password = 'cloudera'
+    outfile = None    
     from_time = None
     to_time = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "host=", "port=", "version=", "user=", "password=", "from_time=", "to_time="])
+        opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "host=", "port=", "version=", "user=", "password=", "outfile=", "from_time=", "to_time="])
     except getopt.GetoptError, err:
         print >> sys.stderr, err
         usage()
@@ -138,6 +163,8 @@ def main(argv):
             user = value;
         elif option in ("--password"):
             password = value;
+        elif option in ("--outfile"):
+            outfile = value;
         elif option in ("--from_time"):
             try:
                 from_time = datetime.strptime(value, "%Y-%m-%dT%H:%M")
@@ -159,11 +186,13 @@ def main(argv):
             to_time = datetime.now()
         if from_time is None:
             from_time = (to_time - timedelta(minutes=DEFAULT_FROM_TIME_WINDOW_MIN))
-        do_query(host, port, version, user, password, from_time, to_time, args[0])
-        return 0
+        do_query(host, port, version, user, password, outfile, from_time, to_time, args[0])
+        return 0         
     else:
         usage()
         return -1
+
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))

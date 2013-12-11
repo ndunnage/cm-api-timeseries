@@ -1,0 +1,23 @@
+# Python csv extraction scripts
+# Uses the cm-timeseries-api a python extension to cm-api
+# default to_time = up to the previous 5 minutes
+# default from_time = 30 minutes before the to_time
+#
+# CPU Usage
+./timeseries.py --version=4 --from_time=2013-12-03T14:43 "select cpu_percent" >> cpu.csv
+# Cluster HDFS Usage
+./timeseries.py --version=4 --from_time=2013-12-03T14:43 "select dfs_capacity, dfs_capacity_used, dfs_capacity_used_non_hdfs where entityName=hdfs1" >>hdfs.csv
+
+# Network I/O
+./timeseries.py --version=4 --from_time=2013-12-03T14:43 "select dt0(bytes_receive_network_interface_sum), dt0(bytes_transmit_network_interface_sum) where category = CLUSTER and clusterId = 1"
+
+# Heap on the Namenode
+./timeseries.py --version=4 --from_time=2013-12-03T14:43 "select jvm_heap_used_mb where roleType=NAMENODE"
+
+# Disk used on the namenode
+./timeseries.py --version=4 --from_time=2013-12-03T14:43 "select capacity_used, capacity_free where category=DIRECTORY AND roleType=namenode"
+
+./timeseries.py --host localhost --port 7180 --version 4 --user cloudera --password cloudera "select (waiting_maps + waiting_reduces) where roleType=JOBTRACKER" >>maps.csv
+
+Some additonal select statements
+select (occupied_map_slots / (map_slots + reduce_slots)) * 100, (occupied_reduce_slots / (map_slots + reduce_slots)) * 100 where roleType=JOBTRACKER and serviceName=mapreduce1  and ROLENAME = mapreduce1-JOBTRACKER-1 and $HOSTID = localhost.localdomain  $HOSTNAME = localhost.localdomain  $CLUSTERID = 1 
