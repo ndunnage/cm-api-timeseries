@@ -20,7 +20,7 @@ python setup.py install
 The CM API Time-series script can then be installed via:
 
 ```bash
-git clone git@github.com:ggear/cm-api-timeseries.git
+git clone git@github.com:ndunnage/cm-api-timeseries.git
 cd cm-api-timeseries
 ```
 
@@ -31,13 +31,14 @@ Example usages:
 ```bash
 ./timeseries.py
 ./timeseries.py --help
-./timeseries.py "select cpu_percent"
-./timeseries.py "select total_cpu_user where roleType=DATANODE"
-./timeseries.py "select (waiting_maps + waiting_reduces) where roleType=JOBTRACKER"
-./timeseries.py --from_time 2013-08-29T10:00 --to_time 2013-08-29T16:00 "select (waiting_maps + waiting_reduces) where roleType=JOBTRACKER"
+./timeseries.py --version=5 "select cpu_percent"
+./timeseries.py --version=5 --outfile=path/to/my/file.csv "select cpu_percent"
+./timeseries.py --version=5 "select total_cpu_user where roleType=DATANODE"
+./timeseries.py --version=5 "select (waiting_maps + waiting_reduces) where roleType=JOBTRACKER"
+./timeseries.py --version=5 --from_time 2013-08-29T10:00 --to_time 2013-08-29T16:00 "select (waiting_maps + waiting_reduces) where roleType=JOBTRACKER"
 ./timeseries.py --host my.cm.server.com --port 80 --version 4 --user my-user --password my-user-password "select (waiting_maps + waiting_reduces) where roleType=JOBTRACKER"
 ```
 
 For details on how to define valid queries, see the [CM tsquery language reference](http://www.cloudera.com/content/cloudera-content/cloudera-docs/CM4Ent/latest/Cloudera-Manager-Diagnostics-Guide/cmdg_tsquery.html).
 
-The console output is structed as a CSV and can therefore be piped to a file for looking at using a CSV reader (eg Excel, OpenOffice etc) and further analysis.
+If the outfile option is enabled a csv file will be created using he do_csv function. The console output is also structed as a CSV and can therefore be piped to a file for looking at using a CSV reader (eg Excel, OpenOffice etc) and further analysis.
