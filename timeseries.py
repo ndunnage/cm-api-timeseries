@@ -35,7 +35,7 @@ Options:
                                    Defaults to latest as defined in the cm_api python module
 --user=<cm-server-user>            The Cloudera Manager user
                                    Defaults to 'cloudera'
---user=<cm-server-user-password>   The Cloudera Manager user password
+--password=<cm-server-user-password>   The Cloudera Manager user password
                                    Defaults to 'cloudera'
 --from_time=<from_time>            From time for the query, in the "YYYY-mm-ddTHH:MM" format
                                    Defaults to 30 minutes before 'to_time'
